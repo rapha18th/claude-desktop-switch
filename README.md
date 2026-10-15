@@ -83,7 +83,7 @@ The desktop app files Code sessions per account in `claude-code-sessions\<accoun
 - scheduled tasks merge by id;
 - Remote Control links and saved-environment links stay with the account that made them.
 
-A session resumed under another organization shows "Claude can't use thinking from another organization". The conversation is whole. Claude rereads it and thinks afresh, so the first reply takes a little longer.
+A session resumed under another organization shows a notice about thinking from another organization. The conversation is whole. Claude rereads it and thinks afresh, so the first reply takes a little longer.
 
 ### Safety
 

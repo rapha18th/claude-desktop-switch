@@ -12,7 +12,7 @@ Usage:
   splice.py journal  <config.json> <stash dir>
 
 loginok prints "ok" or the reason a login looks signed out. It reads key names
-and counts cookie rows; it never reads a token or cookie value.
+and counts cookie rows, and leaves every token and cookie value unread.
 
 journal settles a leftover config.json.journal. The app writes the journal
 before each config commit and replays it at start only while config.json is
@@ -66,13 +66,13 @@ def save_atomic(path, data):
 def login_problem(config, cookies):
     data = load(config)
     if not data.get("lastKnownAccountUuid"):
-        return "no account id"
+        return "account id missing"
     if not any(k.startswith(ACCOUNT_PREFIXES) for k in data):
-        return "no login keys"
+        return "login keys missing"
     if data.get("windowSizeWasSignedIn") is False:
         return "the app last showed the signed-out screen"
     if not os.path.exists(cookies):
-        return "no cookie database"
+        return "cookie database missing"
     try:
         uri = pathlib.Path(cookies).resolve().as_uri() + "?mode=ro&immutable=1"
         con = sqlite3.connect(uri, uri=True)
@@ -83,16 +83,16 @@ def login_problem(config, cookies):
         finally:
             con.close()
         if rows == 0:
-            return "no claude.ai session cookie"
+            return "claude.ai session cookie missing"
     except sqlite3.Error:
-        pass  # unreadable database: no evidence either way
+        pass  # an unreadable database leaves the call to the checks above
     return ""
 
 
 def settle_journal(config, stash):
     journal = config + ".journal"
     if not os.path.exists(journal):
-        return "none"
+        return "clean"
     with open(journal, "rb") as f:
         raw = f.read()
     valid = False

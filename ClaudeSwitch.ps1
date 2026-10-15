@@ -6,19 +6,19 @@ The mechanism comes from realiti4/claude-swap (MIT), which does this for the Cla
   - every switch first saves the live login back into its slot (tokens rotate, so the
     newest copy is captured), then restores the target slot;
   - only account-specific state moves; settings and memory stay shared;
-  - accounts are never logged out, because a logout revokes the saved token.
+  - every account stays signed in, because a logout revokes the saved token.
 For the desktop app it adds:
   - Code sessions shared across saved accounts (sessions.py) while the app is closed;
   - the app's pending config journal settled before config.json changes;
-  - a signed-out login never saved over a good one;
-  - displaced logins kept in a stash; the only copy of a login is never pruned.
+  - a signed-out login goes to the stash, and the saved copy stays as it was;
+  - displaced logins wait in a stash, and the only copy of a login always stays.
 
 Commands:
   ClaudeSwitch.ps1 setup                               guided first run, then shortcuts
   ClaudeSwitch.ps1 list                                accounts and health
   ClaudeSwitch.ps1 add <name> [-CurrentName <name>]    save the live login, open Claude signed out
   ClaudeSwitch.ps1 use <name> [-Force]                 switch accounts
-  ClaudeSwitch.ps1 sync [-Force]                       share sessions without switching
+  ClaudeSwitch.ps1 sync [-Force]                       share sessions in place
   ClaudeSwitch.ps1 remove <name>                       forget an account (its login goes to the stash)
   ClaudeSwitch.ps1 shortcuts [-Desktop]                Start menu (and Desktop) shortcuts per account
 #>
@@ -387,7 +387,7 @@ function Copy-Bundle([string]$From, [string]$To) {
 }
 
 function Save-LiveTo([string]$Dest) {
-    # Writes into Dest.new, then swaps it in, so a failed save never damages the old copy.
+    # Writes into Dest.new, then swaps it in, so the old copy survives a failed save.
     $tmp = "$Dest.new"
     if ([IO.Directory]::Exists($tmp)) { Remove-Item -LiteralPath $tmp -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $tmp | Out-Null
@@ -475,7 +475,7 @@ function Clear-Shadow {
 
 function Remove-OldStashes {
     # Keeps the 10 newest of each kind and anything from the last 14 days.
-    # Logins that belong to no account (unknown-login, shadow) are never removed.
+    # Logins outside the saved accounts (unknown-login, shadow) always stay.
     try {
         if (-not [IO.Directory]::Exists($StashRoot)) { return }
         $cut = (Get-Date).AddDays(-14)
@@ -531,7 +531,7 @@ function Save-Current($s, [string]$fallbackName) {
 }
 
 # Copies Code sessions across every saved account. Runs while the app is closed.
-# A failure here never blocks the login switch.
+# A failure here is logged, and the login switch goes ahead.
 function Sync-Sessions($s) {
     $dir = Join-Path $AppData 'claude-code-sessions'
     if (-not [IO.Directory]::Exists($dir)) { return }
@@ -582,7 +582,7 @@ function Update-Shortcuts($s, [switch]$WithDesktop) {
     $shell = New-Object -ComObject WScript.Shell
     foreach ($d in $dirs) {
         New-Item -ItemType Directory -Force -Path $d | Out-Null
-        # Remove shortcuts this tool made for accounts that no longer exist.
+        # Remove shortcuts this tool made for accounts that are gone.
         Get-ChildItem -LiteralPath $d -Filter 'Claude (*).lnk' -ErrorAction SilentlyContinue | ForEach-Object {
             $l = $shell.CreateShortcut($_.FullName)
             if ($l.Arguments.Contains($PSCommandPath) -and @($items.Title) -notcontains $_.BaseName) { Remove-Item -LiteralPath $_.FullName -Force }
@@ -738,7 +738,7 @@ try {
             $target = Get-Slot $state $Name
             if (-not $target) { throw "Saved accounts: $(@($state.slots | ForEach-Object { $_.name }) -join ', '). '$Name' is outside that list." }
             # Check the saved login before closing Claude. The active account is the live
-            # login and needs no saved copy yet; right after add it has none.
+            # login, and right after add its saved copy is still to come.
             if ($Name -ne $state.active -and $target.uuid) { Assert-SavedLogin $target }
             Stop-ClaudeApp
             Resolve-Journal

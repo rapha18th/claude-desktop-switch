@@ -167,7 +167,7 @@ def sync_tasks(folders, snapshot_path, stash):
 
     # Every folder that took part in the last sync held the same tasks, so a known task
     # missing from one of them was removed there since. A folder new to the group, or
-    # one whose file was unreadable last time, has had no chance to remove anything.
+    # one whose file was unreadable last time, keeps every task.
     removed = set()
     for _, took_part, _, _, _, data in files:
         if took_part:
