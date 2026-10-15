@@ -85,6 +85,30 @@ The desktop app files Code sessions per account in `claude-code-sessions\<accoun
 
 A session resumed under another organization shows a notice about thinking from another organization. The conversation is whole. Claude rereads it and thinks afresh, so the first reply takes a little longer.
 
+### Background jobs
+
+Jobs that a Code session starts in the background keep running when Claude closes. The resumed session starts with a fresh task list, so it loses sight of them and may start them again. `JobHandover.ps1` hands them back:
+
+- before Claude closes, the switch records each running job: session, folder, command, process and log files;
+- a `SessionStart` hook in `~\.claude\settings.json` runs `JobHandover.ps1 hook` as each session opens, finds that session's jobs still running, and tells Claude to watch them and leave them running;
+- the hook also catches jobs left by an app update or restart, matched by folder;
+- jobs that finished during the switch arrive as a list of logs to read.
+
+Add the hook once:
+
+```json
+"hooks": { "SessionStart": [ { "matcher": "startup|resume", "hooks": [ {
+  "type": "command", "command": "powershell.exe",
+  "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\path\\to\\JobHandover.ps1", "hook"],
+  "timeout": 30 } ] } ] }
+```
+
+`JobHandover.ps1 list` shows the jobs under each session and any orphans.
+
+### Office skills on Windows
+
+The docx, pptx and xlsx skills convert documents through LibreOffice with `scripts/office/soffice.py`. That helper probes a Unix socket type that Windows Python lacks, and stops before LibreOffice starts. `office_skills.py patch` adds a Windows path to the helper; the switch runs it after every change of account, because the app downloads fresh skill copies per account. Add `C:\Program Files\LibreOffice\program` to your PATH as well, so the helper finds `soffice`.
+
 ### Safety
 
 - Every account stays signed in, because a logout revokes the saved token. Switch with the shortcuts and leave Claude's own Sign out alone.

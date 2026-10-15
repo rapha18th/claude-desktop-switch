@@ -312,6 +312,17 @@ function Stop-ClaudeApp {
     $procs = Get-ClaudeProcesses
     if ($procs.Count -gt 0) {
         $busy = Get-ClaudeProcesses -CodeSessions
+        # Record the sessions' running jobs. They outlive the app, and the SessionStart
+        # hook (JobHandover.ps1 hook) hands them back to each resumed session.
+        $jobs = @()
+        $handover = Join-Path $PSScriptRoot 'JobHandover.ps1'
+        if ($busy.Count -gt 0 -and (Test-Path $handover)) {
+            try { $jobs = @(& powershell -NoProfile -ExecutionPolicy Bypass -File $handover capture) } catch { $jobs = @() }
+        }
+        if ($jobs.Count -gt 0) {
+            Say "$($jobs.Count) background job(s) keep running through the switch; each resumed session picks them up:"
+            foreach ($j in $jobs) { Say "  $j" }
+        }
         if ($busy.Count -gt 0 -and -not $Force) {
             $answer = Read-Host "Claude is running Code sessions. Switching closes them and stops any turn in progress. Continue? [y/N]"
             if ($answer -notmatch '^(y|yes)$') { throw 'Cancelled. Everything stays as it was.' }
@@ -532,7 +543,24 @@ function Save-Current($s, [string]$fallbackName) {
 
 # Copies Code sessions across every saved account. Runs while the app is closed.
 # A failure here is logged, and the login switch goes ahead.
+# Re-applies the Windows fix to the Office skills' LibreOffice helper (office_skills.py).
+# The app re-downloads skills per account, so each switch patches the fresh copies.
+function Repair-OfficeSkills {
+    $py = Join-Path $PSScriptRoot 'office_skills.py'
+    $root = Join-Path $AppData 'local-agent-mode-sessions'
+    if (-not ([IO.File]::Exists($py) -and [IO.Directory]::Exists($root))) { return }
+    try {
+        $r = Invoke-Py $py @('patch', $root)
+        if ($r.Code -ne 0) { throw ($r.Out | Out-String).Trim() }
+        $line = @($r.Out | Where-Object { $_ -like 'Office skills:*' }) | Select-Object -Last 1
+        if ($line -and $line -notlike '*: 0 patched*') { Say "$line" }
+    } catch {
+        Say "Office skill repair failed. The switch goes ahead: $($_.Exception.Message)"
+    }
+}
+
 function Sync-Sessions($s) {
+    Repair-OfficeSkills
     $dir = Join-Path $AppData 'claude-code-sessions'
     if (-not [IO.Directory]::Exists($dir)) { return }
     $accounts = @($s.slots | ForEach-Object { $_.uuid } | Where-Object { $_ } | Select-Object -Unique)
