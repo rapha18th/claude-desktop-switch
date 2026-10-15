@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Desktop Switch</title>
+<meta name="description" content="Switch the Claude desktop app between accounts on Windows. Your sessions follow you.">
+<style>
+  :root {
+    --bg: #0b0b0a;
+    --ink: #f0eee6;
+    --mute: #8a877e;
+    --line: #2a2926;
+    --clay: #d97757;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f0eee6; --ink: #141413; --mute: #6b6962; --line: #d6d3c8; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: 100%;
+    padding: 0 16px;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 40px;
+    padding: 64px 0;
+  }
+  .mark {
+    font-size: 12px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--mute);
+    padding-left: 0.42em;
+  }
+  .switch {
+    width: 168px;
+    height: 72px;
+    border: 1px solid var(--line);
+    border-radius: 36px;
+    position: relative;
+  }
+  .switch::before, .switch::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .switch::before { left: 33px; }
+  .switch::after { right: 33px; }
+  .knob {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--ink);
+    animation: flip 6s cubic-bezier(.65, 0, .35, 1) infinite;
+  }
+  @keyframes flip {
+    0%, 38% { transform: translateX(0); }
+    50%, 88% { transform: translateX(96px); }
+    100% { transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .knob { animation: none; } }
+  h1 {
+    font-weight: 300;
+    font-size: clamp(32px, 6vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .lede { color: var(--mute); max-width: 30em; }
+  .go {
+    display: inline-block;
+    background: var(--clay);
+    color: #141413;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 14px 28px;
+    border-radius: 999px;
+  }
+  .go:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+  .note { color: var(--mute); font-size: 14px; max-width: 32em; }
+  .note a, footer a { color: var(--ink); }
+  footer {
+    color: var(--mute);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px 0 32px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark">Claude Desktop Switch</div>
+  <div class="switch" aria-hidden="true"><div class="knob"></div></div>
+  <h1>Two accounts.<br>One click.</h1>
+  <p class="lede">Switch the Claude desktop app between your accounts on Windows. Your Code sessions follow you.</p>
+  <a class="go" href="claude://code/new?q=Set%20up%20Claude%20Desktop%20Switch%20on%20this%20PC%20from%20https%3A%2F%2Fgithub.com%2Frapha18th%2Fclaude-desktop-switch.%20Clone%20it%20into%20%25USERPROFILE%25%5CTools%5Cclaude-desktop-switch%2C%20confirm%20Python%203.8%20or%20newer%20runs%2C%20and%20read%20the%20README.%20The%20switch%20closes%20this%20app%2C%20so%20ClaudeSwitch.ps1%20is%20mine%20to%20run%3A%20when%20everything%20is%20ready%2C%20tell%20me%20to%20double-click%20Setup.cmd%20in%20that%20folder.">Start with Claude</a>
+  <p class="note">Opens the Claude desktop app with the setup prompt ready. Press Enter to begin.
+    Using Claude Code in a terminal? <a href="claude-cli://open?q=Set%20up%20Claude%20Desktop%20Switch%20on%20this%20PC%20from%20https%3A%2F%2Fgithub.com%2Frapha18th%2Fclaude-desktop-switch.%20Clone%20it%20into%20%25USERPROFILE%25%5CTools%5Cclaude-desktop-switch%2C%20confirm%20Python%203.8%20or%20newer%20runs%2C%20and%20read%20the%20README.%20The%20switch%20closes%20this%20app%2C%20so%20ClaudeSwitch.ps1%20is%20mine%20to%20run%3A%20when%20everything%20is%20ready%2C%20tell%20me%20to%20double-click%20Setup.cmd%20in%20that%20folder.">Start there</a>.
+    Prefer to do it yourself? Follow the <a href="https://github.com/rapha18th/claude-desktop-switch#quick-start">quick start</a>.</p>
+</main>
+<footer>
+  MIT licensed. Inspired by <a href="https://github.com/realiti4/claude-swap">claude-swap</a>.
+  Made by Rairo Mukamuri and Claude. <a href="https://github.com/rapha18th/claude-desktop-switch">Source on GitHub</a>.
+</footer>
+</body>
+</html>

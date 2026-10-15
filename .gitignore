@@ -1,0 +1,11 @@
+# Runtime data, in case a run points -Store into this folder
+state.json
+state.json.*
+shared-sessions.json
+*.log
+slots/
+stash/
+
+# Python
+__pycache__/
+*.pyc
